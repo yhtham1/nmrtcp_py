@@ -7,8 +7,8 @@ import etools as et
 
 IP = 'localhost'
 PULSER_PORT = 5025  # PULSER
-AD_PORT = 5026  	# AD
-RF_PORT = 5027  	# RF LOWLEVEL
+AD_PORT = 5026  # AD
+RF_PORT = 5027  # RF LOWLEVEL
 
 
 # --------------------------------------------------------------------------
@@ -72,6 +72,8 @@ class tcp_client():
 		tans = self.recv_utf8(rxlen)
 		ans = tans.strip()
 		return ans
+
+
 # -------------------------------------------------------------------
 
 
@@ -96,7 +98,7 @@ class prot_pulser(tcp_client):
 	def __init__(self):
 		self.internal_clock = 100e6  # 100MHz
 		self.mem = []
-		for i in range(self.MAX_PULMEM ):
+		for i in range(self.MAX_PULMEM):
 			p = self.puldatc(0xfeffffff, 0)
 			self.mem.append(p)
 		p = self.puldatc(0xffffffff, 0)
@@ -148,7 +150,7 @@ class prot_pulser(tcp_client):
 				s1 = ans_idn[p1:p2]
 				clk = et.str2freq(s1)
 				self.internal_clock = clk
-				# print('clk:{}'.format(self.internal_clock))
+			# print('clk:{}'.format(self.internal_clock))
 		else:
 			print(' BIT ERROR {}.init()'.format(self.__class__.__name__))
 		return ans_idn
@@ -214,7 +216,7 @@ class prot_ad(tcp_client):
 		p = ans_idn.find(',BIT=')
 		if 0 <= p:
 			self.bitwidth = int(ans_idn[p + 5:p + 7])
-			# print('bit:{}'.format(self.bitwidth))
+		# print('bit:{}'.format(self.bitwidth))
 		else:
 			print('AD BIT ERROR {}.init()'.format(self.__class__.__name__))
 		return ans_idn
@@ -319,6 +321,7 @@ def main():  # SELF TEST PROGRAM
 	adc.close()
 	pul.close()
 	return
+
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
