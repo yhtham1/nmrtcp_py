@@ -14,10 +14,11 @@ RF_PORT = 5027  # RF LOWLEVEL
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 class tcp_client():
-	dev_socket = []
+	my_socket = []
 
 	def close(self):
-		self.dev_socket.close()
+		self.my_socket.close()
+		self.my_socket = None
 
 	def connect(self, ip, port, timeout=5):
 		s = socket.socket()
@@ -25,8 +26,8 @@ class tcp_client():
 		try:
 			# self.dev_socket = socket.create_connection((ip, port), timeout)
 			s.connect((ip, port))
-			self.dev_socket = s
-			return self.dev_socket
+			self.my_socket = s
+			return self.my_socket
 		except ConnectionRefusedError:
 			print('{}-IP:{} PORT:{}:connect error'.format(self.__class__.__name__, ip, port))
 			return None
@@ -35,12 +36,12 @@ class tcp_client():
 	def send_utf8(self, msg):
 		bstr = msg.encode('utf-8')
 		# print( bstr )
-		self.dev_socket.sendall(bstr)
+		self.my_socket.sendall(bstr)
 		return
 
 	# -------------------------------------------------------------------
 	def recv_utf8(self, rxlen):  # 指定バイト数を読まなくても戻る
-		bans = self.dev_socket.recv(rxlen)
+		bans = self.my_socket.recv(rxlen)
 		if None == bans:
 			return ''
 		ans = bans.decode('utf-8')
@@ -53,7 +54,7 @@ class tcp_client():
 		remain = rxlen
 		ans = ''
 		while 0 < remain:
-			b1 = self.dev_socket.recv(block_size)
+			b1 = self.my_socket.recv(block_size)
 			if None == b1:
 				return ''
 			# print('recv_utf8:-2:{} -1:{}'.format(bans[-2], bans[-1] ))
@@ -67,8 +68,7 @@ class tcp_client():
 		self.send_utf8(cmdstr)
 
 	def query(self, msg, rxlen=1024):
-		cmdstr = msg + '\n'
-		self.send(cmdstr)
+		self.send(msg)
 		tans = self.recv_utf8(rxlen)
 		ans = tans.strip()
 		return ans
@@ -150,7 +150,7 @@ class prot_pulser(tcp_client):
 				s1 = ans_idn[p1:p2]
 				clk = et.str2freq(s1)
 				self.internal_clock = clk
-			# print('clk:{}'.format(self.internal_clock))
+		# print('clk:{}'.format(self.internal_clock))
 		else:
 			print(' BIT ERROR {}.init()'.format(self.__class__.__name__))
 		return ans_idn
