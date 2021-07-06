@@ -254,6 +254,27 @@ class prot_rf(tcp_client):
 		ans_idn = self.query('*IDN?')
 		return ans_idn
 
+def test1(rf):
+	while True:
+		rf.send('RFSWW1')
+		time.sleep(0.1)
+		rf.send('RFSWW0')
+		time.sleep(0.1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
@@ -281,6 +302,10 @@ def main():  # SELF TEST PROGRAM
 		print('prot.py:error socket')
 		return
 	print('CONNECT [{}]'.format(s))
+
+	test1(rfl)
+	return
+
 
 	iteration = 1
 	wavesize = 4096

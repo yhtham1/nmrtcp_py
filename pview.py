@@ -365,7 +365,7 @@ class MainWindow(QMainWindow):
 
 
 	def save(self):
-		fn = 'settings.txt'
+		fn = 'settings.bin'
 		p = self.Panel2Var()
 		# p = self.query_all_pulser()
 		print('pickle start ', p.fpw )
@@ -374,8 +374,8 @@ class MainWindow(QMainWindow):
 		print('pickle end')
 
 	def load(self):
-		print('load from settings.txt')
-		fn = 'settings.txt'
+		print('load from settings.bin')
+		fn = 'settings.bin'
 #		k = self.query_all_pulser()
 		with open(fn,'rb') as fd:
 			k = pickle.load(fd)
