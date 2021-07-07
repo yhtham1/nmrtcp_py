@@ -114,7 +114,7 @@ class prot_pulser(tcp_client):
 	# -------------------------------------------------------------------
 	def wait(self):
 		while 'RUN' == self.query('isrun?'):
-			time.sleep(10e-3)
+			time.sleep(1e-3)
 
 	def startpulser(self, num):
 		self.send('start {}'.format(num))
@@ -234,15 +234,17 @@ class prot_rf(tcp_client):
 	rfl.send('rfsww0')
 	rfl.query('*idn?')
 	"""
-
 	# -------------------------------------------------------------------
 	def query(self, msg):
-		self.send(msg)
+		super().send(msg)
 		a = self.recv_utf8(100)
 		while 2 == len(a):
 			a = self.recv_utf8(100)
 		ans = a.strip()
 		return ans
+
+	def send(self,msg):
+		ans = self.query(msg) # wait for HardWare delay
 
 	def init(self, ip):
 		port = RF_PORT
@@ -254,27 +256,35 @@ class prot_rf(tcp_client):
 		ans_idn = self.query('*IDN?')
 		return ans_idn
 
-def test1(rf):
+def test1(pul):
+	print('Start------------ {} '.format(pul.query('*idn?')))
+	pul.send('setmode 0')
+	pul.send('loopmode')
+	pul.send('single')
+	pul.send('adoff 0')
+	pul.send('fpw 100e-6')
+	pul.send('blank 0.001')
+	ct = 0
 	while True:
-		rf.send('RFSWW1')
-		time.sleep(0.1)
-		rf.send('RFSWW0')
-		time.sleep(0.1)
+		t1 = time.perf_counter()
+		pul.send('start 1')
+		pul.wait()
+		t2 = time.perf_counter()
+		print('ct:{} t:{:f}'.format(ct, t2-t1))
+		ct += 1
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def test2(d):
+	ct = 0
+	while True:
+		t1 = time.perf_counter()
+		d.send('RFSWW1')
+		ct += 1
+		t2 = time.perf_counter()
+		print('ct:{} Time:{:f}'.format(ct, t2-t1))
+		# time.sleep(0.1)
+		d.send('RFSWW0')
+		ct += 1
+		# time.sleep(0.1)
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
@@ -303,7 +313,8 @@ def main():  # SELF TEST PROGRAM
 		return
 	print('CONNECT [{}]'.format(s))
 
-	test1(rfl)
+	# test1(pul)
+	test2(rfl)
 	return
 
 
