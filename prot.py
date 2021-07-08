@@ -265,7 +265,7 @@ def test1(pul):
 	pul.send('fpw 100e-6')
 	pul.send('blank 0.001')
 	ct = 0
-	while True:
+	for i in range(5000):
 		t1 = time.perf_counter()
 		pul.send('start 1')
 		pul.wait()
@@ -275,16 +275,25 @@ def test1(pul):
 
 def test2(d):
 	ct = 0
-	while True:
+	for i in range(101):
 		t1 = time.perf_counter()
-		d.send('RFSWW1')
+		d.query('GAINW80')
+		t2 = time.perf_counter()
+		ct += 1
+		d.query('GAINW0')
+		print('ct:{} Time:{:f}'.format(ct, t2-t1))
+		ct += 1
+		time.sleep(0.01)
+
+def test3(d):
+	ct = 0
+	a = 0
+	for i in range(90):
+		t1 = time.perf_counter()
+		ans = d.query('GAINW{}'.format(a))
 		ct += 1
 		t2 = time.perf_counter()
-		print('ct:{} Time:{:f}'.format(ct, t2-t1))
-		# time.sleep(0.1)
-		d.send('RFSWW0')
-		ct += 1
-		# time.sleep(0.1)
+		print('ct:{} Time:{:f} ans:{}'.format(ct, t2-t1,ans))
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
@@ -315,6 +324,7 @@ def main():  # SELF TEST PROGRAM
 
 	# test1(pul)
 	test2(rfl)
+	# test3(rfl)
 	return
 
 
