@@ -4,6 +4,8 @@
 import time
 import socket
 import etools as et
+import matplotlib.pyplot as plt
+
 
 IP = 'localhost'
 PULSER_PORT = 5025  # PULSER
@@ -74,29 +76,28 @@ class tcp_client():
 		return ans
 
 
-# -------------------------------------------------------------------
-
-
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 class prot_pulser(tcp_client):
-	MAX_PULMEM = 3000
 	"""
 	使用できる関数一覧
 	import prot
-	pul = prot.prot_pulser()
-	pul.init(ip,port)		*IDNの文字列を返す
-	pul.send('start 0')
+	pul = prot.prot_pulser()	インスタンス生成
+	pul.init(ip,port)			接続情報の設定
+	pul.open()					*IDNの文字列を返す
+	pul.send('start 0')			コマンド実行
 	"""
-
 	class puldatc:
 		def __init__(self, t1, d1):
 			self.t = t1
 			self.d = d1
 
 	def __init__(self):
+		self.MAX_PULMEM = 3000
 		self.internal_clock = 100e6  # 100MHz
+		self.ip = 'localghost'
+		self.port = PULSER_PORT
 		self.mem = []
 		for i in range(self.MAX_PULMEM):
 			p = self.puldatc(0xfeffffff, 0)
@@ -134,9 +135,12 @@ class prot_pulser(tcp_client):
 			self.mem[st_add + i].d = int(ans[i * 16 + 8:i * 16 + 16], base=16)
 		return self.mem[st_add: st_add + num]
 
-	def init(self, ip):
-		port = PULSER_PORT
-		ans = self.connect(ip, port)
+	def init(self, ip='localhost', port=PULSER_PORT):
+		self.ip = ip
+		self.port = port
+
+	def open(self):
+		ans = self.connect(self.ip, self.port)
 		if None == ans:
 			print('ERROR {}.init()'.format(self.__class__.__name__))
 			return None
@@ -162,11 +166,13 @@ class prot_pulser(tcp_client):
 class prot_ad(tcp_client):
 	"""
 	使用できる関数一覧
-	import prot
-	adc = prot.prot_ad()
-	adc.init(ip,port)		*IDNの文字列を返す
+	readadf()
 	"""
 	bitwidth = 16
+
+	def __init__(self):
+		self.ip = 'localhost'
+		self.port = AD_PORT
 
 	# -------------------------------------------------------------------
 	def readad_raw(self, address, samples):
@@ -206,9 +212,12 @@ class prot_ad(tcp_client):
 			fsin.append(f)
 		return fcos, fsin
 
-	def init(self, ip):
-		port = AD_PORT
-		ans = self.connect(ip, port)
+	def init(self, ip='localhost', port = AD_PORT):
+		self.ip = ip
+		self.port = port
+
+	def open(self):
+		ans = self.connect(self.ip, self.port)
 		if None == ans:
 			print('ERROR {}.init()'.format(self.__class__.__name__))
 			return None
@@ -216,7 +225,7 @@ class prot_ad(tcp_client):
 		p = ans_idn.find(',BIT=')
 		if 0 <= p:
 			self.bitwidth = int(ans_idn[p + 5:p + 7])
-		# print('bit:{}'.format(self.bitwidth))
+			# print('bit:{}'.format(self.bitwidth))
 		else:
 			print('AD BIT ERROR {}.init()'.format(self.__class__.__name__))
 		return ans_idn
@@ -230,11 +239,21 @@ class prot_rf(tcp_client):
 	使用できる関数一覧
 	import prot
 	rfl = prot.prot_rf()
-	rfl.init(ip,port)		*IDNの文字列を返す
-	rfl.send('rfsww0')
-	rfl.query('*idn?')
+	rfl.init(ip,port)	connect parameters 接続情報
+	rfl.open()          接続に成功した場合　*IDNの文字列を返す
+	rfl.send('rfsww0')	コマンド例
+	rfl.query('*idn?')	コマンド例
 	"""
+	def __init__(self):
+		self.ip = 'localhost'
+		self.port = RF_PORT
+
 	# -------------------------------------------------------------------
+	def send(self, msg):
+		super().send(msg)
+		a = self.recv_utf8(100)
+		return
+
 	def query(self, msg):
 		super().send(msg)
 		a = self.recv_utf8(100)
@@ -243,18 +262,19 @@ class prot_rf(tcp_client):
 		ans = a.strip()
 		return ans
 
-	def send(self,msg):
-		ans = self.query(msg) # wait for HardWare delay
-
-	def init(self, ip):
-		port = RF_PORT
+	def init(self, ip = 'localhost',port=RF_PORT):
+		self.ip = ip
+		self.port = port
 		# print('{}-IP:{} PORT{}'.format(self.__class__.__name__, ip, port ))
-		ans = self.connect(ip, port)
+
+	def open(self):
+		ans = self.connect(self.ip, self.port)
 		if None == ans:
 			print('ERROR {}.init()'.format(self.__class__.__name__))
 			return None
 		ans_idn = self.query('*IDN?')
 		return ans_idn
+
 
 def test1(pul):
 	print('Start------------ {} '.format(pul.query('*idn?')))
@@ -270,20 +290,18 @@ def test1(pul):
 		pul.send('start 1')
 		pul.wait()
 		t2 = time.perf_counter()
-		print('ct:{} t:{:f}'.format(ct, t2-t1))
+		print('ct:{} t:{:f}'.format(ct, t2 - t1))
 		ct += 1
+
 
 def test2(d):
 	ct = 0
-	for i in range(101):
-		t1 = time.perf_counter()
-		d.query('GAINW80')
-		t2 = time.perf_counter()
-		ct += 1
-		d.query('GAINW0')
-		print('ct:{} Time:{:f}'.format(ct, t2-t1))
-		ct += 1
-		time.sleep(0.01)
+	for i in range(100):
+		d.send('RFSWW0')
+		d.send('RFSWW1')
+		time.sleep(0.1)
+	return
+
 
 def test3(d):
 	ct = 0
@@ -293,7 +311,8 @@ def test3(d):
 		ans = d.query('GAINW{}'.format(a))
 		ct += 1
 		t2 = time.perf_counter()
-		print('ct:{} Time:{:f} ans:{}'.format(ct, t2-t1,ans))
+		print('ct:{} Time:{:f} ans:{}'.format(ct, t2 - t1, ans))
+
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
@@ -302,43 +321,51 @@ def main():  # SELF TEST PROGRAM
 	print('start self test program')
 
 	pul = prot_pulser()
-	s = pul.init(IP)
+	pul.init(IP)
+	s = pul.open()
 	if None == s:
 		print('prot.py:error socket')
 		return
 	print('CONNECT [{}]'.format(s))
 
 	adc = prot_ad()
-	s = adc.init(IP)
+	adc.init(IP)
+	s = adc.open()
 	if None == s:
 		print('prot.py:error socket')
 		return
 	print('CONNECT [{}]'.format(s))
 
 	rfl = prot_rf()
-	s = rfl.init(IP)
+	rfl.init(IP)
+	s = rfl.open()
 	if None == s:
 		print('prot.py:error socket')
 		return
 	print('CONNECT [{}]'.format(s))
 
 	# test1(pul)
-	test2(rfl)
+	# test2(rfl)
 	# test3(rfl)
-	return
-
 
 	iteration = 1
 	wavesize = 4096
 	pul.send('stop')
 	pul.wait()
-	adc.send('startad {}, {}, 1, 0'.format(wavesize, iteration))
 
-	pul.send('setmode 0')
+	adc.send('startad {}, {}, 1, 0'.format(wavesize, iteration))  # setup ADC
+	pul.send('setmode 0')			# 0:standard pulse mode 1:extended pulse mode
 	pul.send('loopmode')
-	pul.send('single')
-	pul.send('adoff -100e-6')
-	pul.send('fpw 100e-6')
+	pul.send('usecomb 0')			# comb pulse not use
+	pul.send('cpn 1')				# comb pulse not use
+	pul.send('adtrg 1')				# 0:Spin echo position  1:Freedecay position
+	pul.send('double')				# double pulse mode
+	pul.send('adoff -100e-6')		# AD trigger offset
+	pul.send('fpw 20e-6')       	# 1st pulse width
+	pul.send('t2  50e-6')
+	pul.send('spw 40e-6')			# 2nd pulse width
+	pul.send('fpq 0')				# 1st pulse +X QPSK1ST
+	pul.send('spq 1')				# 2nd pulse +Y QPSK2ND
 	pul.send('blank 0.1')
 	pul.send('start {}'.format(iteration))
 	pul.wait()
@@ -351,21 +378,25 @@ def main():  # SELF TEST PROGRAM
 		print('{:08X}:{:08X}'.format(b.t, b.d))
 
 	adcos, adsin = adc.readadf(0, wavesize, iteration)
-	#	print(adcos)
-	print(len(adcos))
-	#	a1 = plt.subplot()
-	#	a1.set_ylim([-2,2])
-	#	a1.plot(adcos)
-	#	a2 = plt.subplot()
-	#	a2.set_ylim([-2,2])
-	#	a2.plot(adsin)
-	#	plt.show()
-	#	a = adc.query('readmemoryb {},4'.format(wavesize))
-	#	print(a)
+	# a = adc.query('readmemoryb {},4'.format(wavesize))
+	# print(a)
 
 	rfl.close()
 	adc.close()
 	pul.close()
+
+
+	# print('adcos len=',len(adcos))
+	#	print(adcos)
+	# print(len(adcos))
+	a1 = plt.subplot()
+	a1.set_ylim([-2,2])	# voltage is -2.0..2.0V
+	a1.plot(adcos)
+	a2 = plt.subplot()
+	a2.set_ylim([-2,2])
+	a2.plot(adsin)
+	plt.show()
+
 	return
 
 
