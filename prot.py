@@ -16,8 +16,9 @@ RF_PORT = 5027  # RF LOWLEVEL
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 class tcp_client():
-	my_socket = []
-
+	my_socket = None
+	def __init__(self):
+		self.my_socket = None
 	def close(self):
 		self.my_socket.close()
 		self.my_socket = None
@@ -37,7 +38,7 @@ class tcp_client():
 	# -------------------------------------------------------------------
 	def send_utf8(self, msg):
 		bstr = msg.encode('utf-8')
-		# print( bstr )
+		# print( 'chk---------------------------',bstr )
 		self.my_socket.sendall(bstr)
 		return
 
@@ -70,6 +71,8 @@ class tcp_client():
 		self.send_utf8(cmdstr)
 
 	def query(self, msg, rxlen=1024):
+		if None == self.my_socket:
+			print('error not open')
 		self.send(msg)
 		tans = self.recv_utf8(rxlen)
 		ans = tans.strip()
@@ -158,7 +161,8 @@ class prot_pulser(tcp_client):
 		else:
 			print(' BIT ERROR {}.init()'.format(self.__class__.__name__))
 		return ans_idn
-
+	def close(self):
+		super().close()
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -197,6 +201,10 @@ class prot_ad(tcp_client):
 			vcos.append(cosdat)
 			vsin.append(sindat)
 		return vcos, vsin
+
+	def status(self):
+		ans = int(self.query('readstatus'))
+		return ans
 
 	def readadf(self, address, samples, iteration):
 		fcos = []
@@ -370,7 +378,8 @@ def main():  # SELF TEST PROGRAM
 	pul.send('start {}'.format(iteration))
 	pul.wait()
 
-	pul.readmemoryb(0, 10)
+	allpulmem = pul.readmemoryb(0, 3000)
+
 	a = pul.readmemoryb(2, 3)
 	pul.dump(0, 10)
 	print('----------')

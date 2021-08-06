@@ -184,11 +184,14 @@ class MainWindow(QMainWindow):
 		# check1
 		self.setCentralWidget(qcore)
 
+		self.adc = prot.prot_ad()
+		self.adc.init()
+		self.adc.open()
 		self.pul = prot.prot_pulser()
 		s = self.pul.init(IP)
+		self.pul.open()
 		self.pulpara = self.query_all_pulser()
-		self.mem = self.pul.readmemoryb(0, 30)
-
+		self.mem = self.pul.readmemoryb(0, 1000)
 		self.InitUI()
 		self.ct = 0
 		# for m1 in self.mem:
