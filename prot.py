@@ -202,6 +202,10 @@ class prot_ad(tcp_client):
 			vsin.append(sindat)
 		return vcos, vsin
 
+	def status(self):
+		ans = int(self.query('readstatus'))
+		return ans
+
 	def readadf(self, address, samples, iteration):
 		fcos = []
 		fsin = []
