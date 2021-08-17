@@ -97,6 +97,7 @@ class prot_pulser(tcp_client):
 			self.d = d1
 
 	def __init__(self):
+		super().__init__()
 		self.MAX_PULMEM = 3000
 		self.internal_clock = 100e6  # 100MHz
 		self.ip = 'localghost'
@@ -175,6 +176,7 @@ class prot_ad(tcp_client):
 	bitwidth = 16
 
 	def __init__(self):
+		super().__init__()
 		self.ip = 'localhost'
 		self.port = AD_PORT
 
@@ -253,6 +255,7 @@ class prot_rf(tcp_client):
 	rfl.query('*idn?')	コマンド例
 	"""
 	def __init__(self):
+		super().__init__()
 		self.ip = 'localhost'
 		self.port = RF_PORT
 

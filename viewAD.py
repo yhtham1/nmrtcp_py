@@ -7,16 +7,13 @@ import os
 import random
 import matplotlib
 import japanize_matplotlib
-from prot import prot_ad,prot_rf,prot_pulser
-
-
+from prot import prot_ad, prot_rf, prot_pulser
 
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-
 
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -48,6 +45,7 @@ class MyMplCanvas(FigureCanvas):
 	def compute_initial_figure(self):
 		pass
 
+
 class OscilloCanvas(MyMplCanvas):
 	def __init__(self, *args, **kwargs):
 		MyMplCanvas.__init__(self, *args, **kwargs)
@@ -59,12 +57,9 @@ class OscilloCanvas(MyMplCanvas):
 		# Build a list of 4 random integers between 0 and 10 (both inclusive)
 		self.axes.cla()
 		self.axes.set_ylabel('電圧')
-		self.axes.set_ylim(-2.5,2.5)
+		self.axes.set_ylim(-2.5, 2.5)
 		self.axes.plot(t, cosdata, sindata, 'r')
 		self.draw()
-
-
-
 
 
 class MyStaticMplCanvas(MyMplCanvas):
@@ -128,7 +123,7 @@ class myAD(QMainWindow):
 
 		self.osc = OscilloCanvas(self.main_widget, width=5, height=4, dpi=100)
 
-		dk1 = QDockWidget('controls',self)
+		dk1 = QDockWidget('controls', self)
 		dk1.setWidget(self.tools_widget)
 		dk1.setFloating(False)
 		self.addDockWidget(Qt.RightDockWidgetArea, dk1)
@@ -149,10 +144,6 @@ class myAD(QMainWindow):
 		v.addLayout(h1)
 		v.addStretch()
 
-
-
-
-
 		self.main_widget.setFocus()
 		self.setCentralWidget(self.main_widget)
 		self.statusBar().showMessage("All hail matplotlib!", 2000)
@@ -160,7 +151,7 @@ class myAD(QMainWindow):
 	def showTime(self):
 		k = self.children()
 		# print('enter showTime {}'.format(len(k)))
-		e = self.findChild(QLineEdit,'counter')
+		e = self.findChild(QLineEdit, 'counter')
 		if None != e:
 			e.setText('')
 		adcst = (0x07 & adc.status())
@@ -185,7 +176,7 @@ class myAD(QMainWindow):
 
 	def about(self):
 		QMessageBox.about(self, "About",
-									"""embedding_in_qt5.py example
+						  """embedding_in_qt5.py example
 Copyright 2005 Florent Rougon, 2006 Darren Dale, 2015 Jens H Nielsen
 
 This program is a simple example of a Qt5 application embedding matplotlib
@@ -196,16 +187,16 @@ modified versions may be distributed without limitation.
 
 This is modified from the embedding in qt4 example to show the difference
 between qt4 and qt5"""
-									)
-
+						  )
 
 
 def is_adc():
 	a = adc.status()
 	return a
 
+
 def onepulse():
-	iteration = 0 # forever
+	iteration = 0  # forever
 	wavesize = 4096
 	pul.send('stop')
 	pul.wait()
@@ -234,8 +225,10 @@ def onepulse():
 	# print(a)
 	pass
 
+
 adc = prot_ad()
 pul = prot_pulser()
+
 
 def main():
 	adc.init('localhost')
