@@ -181,6 +181,14 @@ class prot_ad(tcp_client):
 		self.port = AD_PORT
 
 	# -------------------------------------------------------------------
+	def status(self):
+		ans = int(self.query('readstatus'))
+		return ans
+
+	def getsamplefreq(self):
+		ans = float(self.query('getsamplefreq'))
+		return ans
+
 	def readad_raw(self, address, samples):
 		self.send('readmemoryb {},{}'.format(address, samples))
 		ans = self.recv_utf8(16)
@@ -204,22 +212,30 @@ class prot_ad(tcp_client):
 			vsin.append(sindat)
 		return vcos, vsin
 
-	def status(self):
-		ans = int(self.query('readstatus'))
-		return ans
-
 	def readadf(self, address, samples, iteration):
 		fcos = []
 		fsin = []
 		dcos, dsin = self.readad_raw(address, samples)
-		for x in dcos:
-			v = float(x) / float(iteration)
-			f = (v - 32768.0) / 13107.2  # 13107.2=(32768.0/2.5)	#±2.5にする。
-			fcos.append(f)
-		for x in dsin:
-			v = float(x) / float(iteration)
-			f = (v - 32768.0) / 13107.2  # 13107.2=(32768.0/2.5)	#±2.5にする。
-			fsin.append(f)
+		if 16 == self.bitwidth:
+			# ----------------------------- bit 16
+			for i in dcos:
+				v = float(i) / float(iteration)
+				f = (v - 32768.0) / 13107.2  # 13107.2=(32768.0/2.5)	#±2.5にする。
+				fcos.append(f)
+			for i in dsin:
+				v = float(i) / float(iteration)
+				f = (v - 32768.0) / 13107.2  # 13107.2=(32768.0/2.5)	#±2.5にする。
+				fsin.append(f)
+		else:
+			# ----------------------------- bit 14
+			for i in dcos:
+				v = float(i) / float(iteration)
+				f = (v - 8192.0) / 3276.8  # 3276.8.2=(8192.0/2.5)	#±2.5にする。
+				fcos.append(f)
+			for i in dsin:
+				v = float(i) / float(iteration)
+				f = (v - 8192.0) / 3276.8  # 3276.8=(8192.0/2.5)	#±2.5にする。
+				fsin.append(f)
 		return fcos, fsin
 
 	def init(self, ip='localhost', port = AD_PORT):
@@ -235,7 +251,7 @@ class prot_ad(tcp_client):
 		p = ans_idn.find(',BIT=')
 		if 0 <= p:
 			self.bitwidth = int(ans_idn[p + 5:p + 7])
-			# print('bit:{}'.format(self.bitwidth))
+			print('AD bit:{}'.format(self.bitwidth))
 		else:
 			print('AD BIT ERROR {}.init()'.format(self.__class__.__name__))
 		return ans_idn
