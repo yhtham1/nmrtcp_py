@@ -12,8 +12,8 @@ from prot import prot_ad, prot_rf, prot_pulser
 
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+from PyQt5.QtCore    import *
+from PyQt5.QtGui     import *
 from PyQt5.QtWidgets import *
 
 from numpy import arange, sin, pi
@@ -59,7 +59,7 @@ class OscilloCanvas(MyMplCanvas):
 		# Build a list of 4 random integers between 0 and 10 (both inclusive)
 		self.axes.cla()
 		self.axes.set_ylabel('電圧')
-		self.axes.set_ylim(-3, 3)
+		self.axes.set_ylim(-0.03, 0.03)
 		self.axes.plot(t, cosdata, sindata, 'r')
 		self.draw()
 
@@ -82,24 +82,34 @@ class myAD(QMainWindow):
 		self.help_menu.addAction('&About', self.about)
 
 		self.main_widget = QWidget(self)
-		self.tools_widget = QWidget(self)
+		self.control_widget = QWidget(self)
+		self.device_widget = QWidget(self)
 
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.showTime)
 		self.timer.start(100)
 
 		all = QHBoxLayout(self.main_widget)
-		v = QVBoxLayout(self.tools_widget)
+		v = QVBoxLayout(self.control_widget)
+		v1 = QVBoxLayout(self.device_widget)
 		l = QVBoxLayout(self.main_widget)
 		all.addLayout(l)
 		all.addLayout(v)
+		all.addLayout(v1)
 
 		self.osc = OscilloCanvas(self.main_widget, width=5, height=4, dpi=96)
 
 		dk1 = QDockWidget('controls', self)
-		dk1.setWidget(self.tools_widget)
+		dk1.setObjectName('controls')
+		dk1.setWidget(self.control_widget)
 		dk1.setFloating(False)
 		self.addDockWidget(Qt.RightDockWidgetArea, dk1)
+
+		dk2 = QDockWidget('device', self)
+		dk2.setObjectName('device')
+		dk2.setWidget(self.device_widget)
+		dk2.setFloating(False)
+		self.addDockWidget(Qt.RightDockWidgetArea, dk2)
 
 		l.addWidget(self.osc)
 
@@ -116,6 +126,22 @@ class myAD(QMainWindow):
 		v.addWidget(pn2)
 		v.addLayout(h1)
 		v.addStretch()
+
+		pn1 = QLineEdit()
+		pn1.setObjectName('frames')
+		h1 = QHBoxLayout()
+		n1 = QLabel('FRAMES')
+		self.txtFrames = QLineEdit()
+		h1.addWidget(n1)
+		h1.addWidget(self.txtFrames)
+		v1.addWidget(pn1)
+		v1.addLayout(h1)
+		v1.addStretch()
+
+
+
+
+
 
 		self.main_widget.setFocus()
 		self.setCentralWidget(self.main_widget)
@@ -189,7 +215,7 @@ def onepulse():
 	PUL.send('spw 40e-6')  # 2nd pulse width
 	PUL.send('fpq 0')  # 1st pulse +X QPSK1ST
 	PUL.send('spq 1')  # 2nd pulse +Y QPSK2ND
-	PUL.send('blank 0.2')
+	PUL.send('blank 1.0')
 	# print('ad0:{:02X}'.format(0x07 & int(adc.query('readstatus'))))
 	PUL.send('start {}'.format(iteration))
 	# pul.wait()

@@ -251,7 +251,6 @@ class prot_ad(tcp_client):
 		p = ans_idn.find(',BIT=')
 		if 0 <= p:
 			self.bitwidth = int(ans_idn[p + 5:p + 7])
-			print('AD bit:{}'.format(self.bitwidth))
 		else:
 			print('AD BIT ERROR {}.init()'.format(self.__class__.__name__))
 		return ans_idn
@@ -393,7 +392,7 @@ def main():  # SELF TEST PROGRAM
 	pul.send('spw 40e-6')			# 2nd pulse width
 	pul.send('fpq 0')				# 1st pulse +X QPSK1ST
 	pul.send('spq 1')				# 2nd pulse +Y QPSK2ND
-	pul.send('blank 0.1')
+	pul.send('blank 1')
 	pul.send('start {}'.format(iteration))
 	pul.wait()
 
