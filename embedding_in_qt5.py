@@ -1,4 +1,4 @@
-
+#ＵＴＦ８
 # embedding_in_qt5.py --- Simple Qt5 application embedding matplotlib canvases
 #
 # Copyright (C) 2005 Florent Rougon
@@ -9,7 +9,7 @@
 # modified with no restriction; raw copies as well as modified versions
 # may be distributed without limitation.
 
-# from __future__ import unicode_literals
+from __future__ import unicode_literals
 import sys
 import os
 import random
@@ -17,7 +17,6 @@ import matplotlib
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import *
 
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas

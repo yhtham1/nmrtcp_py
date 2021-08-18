@@ -48,7 +48,8 @@ class MyMplCanvas(FigureCanvas):
 
 class OscilloCanvas(MyMplCanvas):
 	def __init__(self, *args, **kwargs):
-		MyMplCanvas.__init__(self, *args, **kwargs)
+		super().__init__()
+		# MyMplCanvas.__init__(self, *args, **kwargs)
 
 	def compute_initial_figure(self):
 		self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'r')
@@ -93,7 +94,7 @@ class MyDynamicMplCanvas(MyMplCanvas):
 
 class myAD(QMainWindow):
 	def __init__(self):
-		QMainWindow.__init__(self)
+		super().__init__()
 		self.setAttribute(Qt.WA_DeleteOnClose)
 		self.setWindowTitle("application main window")
 
@@ -215,7 +216,7 @@ def onepulse():
 	pul.send('spw 40e-6')  # 2nd pulse width
 	pul.send('fpq 0')  # 1st pulse +X QPSK1ST
 	pul.send('spq 1')  # 2nd pulse +Y QPSK2ND
-	pul.send('blank 1.0')
+	pul.send('blank 0.2')
 	# print('ad0:{:02X}'.format(0x07 & int(adc.query('readstatus'))))
 	pul.send('start {}'.format(iteration))
 	# pul.wait()
