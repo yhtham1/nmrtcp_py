@@ -68,11 +68,42 @@ class OscilloCanvas(MyMplCanvas):
 
 class Oscillo(QWidget):
 	def pbBtn1(self):
-		self.osc.y1 += -0.1
-		self.osc.y2 += 0.1
+		y = self.osc.y2
+		if y == 0.01:
+			y = 0.02
+		elif y == 0.02:
+			y = 0.05
+		elif y == 0.05:
+			y = 0.1
+		elif y == 0.1:
+			y = 0.2
+		elif y == 0.2:
+			y = 0.5
+		elif y == 0.5:
+			y = 1
+		elif y == 1.0:
+			y = 2.0
+		self.osc.y1 = 0-y
+		self.osc.y2 = y
+
 	def pbBtn2(self):
-		self.osc.y1 -= -0.1
-		self.osc.y2 -= 0.1
+		y = self.osc.y2
+		if y == 2.0:
+			y = 1.0
+		elif y == 1.0:
+			y = 0.5
+		elif y == 0.5:
+			y = 0.2
+		elif y == 0.2:
+			y = 0.1
+		elif y == 0.1:
+			y = 0.05
+		elif y == 0.05:
+			y = 0.02
+		elif y == 0.02:
+			y = 0.01
+		self.osc.y1 = 0.0-y
+		self.osc.y2 = y
 
 	def __init__(self, parent=None):
 		super(Oscillo, self).__init__(parent)

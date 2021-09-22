@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import ctypes
 import time
 import socket
 import etools as et
 import matplotlib.pyplot as plt
-
 
 IP = 'localhost'
 PULSER_PORT = 5025  # PULSER
@@ -17,8 +16,10 @@ RF_PORT = 5027  # RF LOWLEVEL
 # --------------------------------------------------------------------------
 class tcp_client():
 	my_socket = None
+
 	def __init__(self):
 		self.my_socket = None
+
 	def close(self):
 		self.my_socket.close()
 		self.my_socket = None
@@ -91,6 +92,7 @@ class prot_pulser(tcp_client):
 	pul.open()					*IDNの文字列を返す
 	pul.send('start 0')			コマンド実行
 	"""
+
 	class puldatc:
 		def __init__(self, t1, d1):
 			self.t = t1
@@ -162,12 +164,35 @@ class prot_pulser(tcp_client):
 		else:
 			print(' BIT ERROR {}.init()'.format(self.__class__.__name__))
 		return ans_idn
+
 	def close(self):
 		super().close()
+
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+import ctypes
+from ctypes import c_uint8
+
+
+class ADC_Flags_bits(ctypes.LittleEndianStructure):
+	_fields_ = [
+		('SP', c_uint8, 1),
+		('BUSY', c_uint8, 1),
+		('END', c_uint8, 1),
+		('NC1', c_uint8, 1),
+		('COVF', c_uint8, 1),
+		('SOVF', c_uint8, 1),
+		('PLL', c_uint8, 1),
+	]
+
+
+class ADC_Flags(ctypes.Union):
+	_fields_ = [("b", ADC_Flags_bits),
+				("asbyte", c_uint8)]
+
+
 class prot_ad(tcp_client):
 	"""
 	使用できる関数一覧
@@ -179,10 +204,12 @@ class prot_ad(tcp_client):
 		super().__init__()
 		self.ip = 'localhost'
 		self.port = AD_PORT
+		self.flag = ADC_Flags()
 
 	# -------------------------------------------------------------------
 	def status(self):
 		ans = int(self.query('readstatus'))
+		self.flag.asbyte = 0xff & ans
 		return ans
 
 	def getsamplefreq(self):
@@ -238,7 +265,7 @@ class prot_ad(tcp_client):
 				fsin.append(f)
 		return fcos, fsin
 
-	def init(self, ip='localhost', port = AD_PORT):
+	def init(self, ip='localhost', port=AD_PORT):
 		self.ip = ip
 		self.port = port
 
@@ -269,6 +296,7 @@ class prot_rf(tcp_client):
 	rfl.send('rfsww0')	コマンド例
 	rfl.query('*idn?')	コマンド例
 	"""
+
 	def __init__(self):
 		super().__init__()
 		self.ip = 'localhost'
@@ -288,10 +316,11 @@ class prot_rf(tcp_client):
 		ans = a.strip()
 		return ans
 
-	def init(self, ip = 'localhost',port=RF_PORT):
+	def init(self, ip='localhost', port=RF_PORT):
 		self.ip = ip
 		self.port = port
-		# print('{}-IP:{} PORT{}'.format(self.__class__.__name__, ip, port ))
+
+	# print('{}-IP:{} PORT{}'.format(self.__class__.__name__, ip, port ))
 
 	def open(self):
 		ans = self.connect(self.ip, self.port)
@@ -380,18 +409,18 @@ def main():  # SELF TEST PROGRAM
 	pul.wait()
 
 	adc.send('startad {}, {}, 1, 0'.format(wavesize, iteration))  # setup ADC
-	pul.send('setmode 0')			# 0:standard pulse mode 1:extended pulse mode
+	pul.send('setmode 0')  # 0:standard pulse mode 1:extended pulse mode
 	pul.send('loopmode')
-	pul.send('usecomb 0')			# comb pulse not use
-	pul.send('cpn 1')				# comb pulse not use
-	pul.send('adtrg 1')				# 0:Spin echo position  1:Freedecay position
-	pul.send('double')				# double pulse mode
-	pul.send('adoff -100e-6')		# AD trigger offset
-	pul.send('fpw 20e-6')       	# 1st pulse width
+	pul.send('usecomb 0')  # comb pulse not use
+	pul.send('cpn 1')  # comb pulse not use
+	pul.send('adtrg 1')  # 0:Spin echo position  1:Freedecay position
+	pul.send('double')  # double pulse mode
+	pul.send('adoff -100e-6')  # AD trigger offset
+	pul.send('fpw 20e-6')  # 1st pulse width
 	pul.send('t2  50e-6')
-	pul.send('spw 40e-6')			# 2nd pulse width
-	pul.send('fpq 0')				# 1st pulse +X QPSK1ST
-	pul.send('spq 1')				# 2nd pulse +Y QPSK2ND
+	pul.send('spw 40e-6')  # 2nd pulse width
+	pul.send('fpq 0')  # 1st pulse +X QPSK1ST
+	pul.send('spq 1')  # 2nd pulse +Y QPSK2ND
 	pul.send('blank 1')
 	pul.send('start {}'.format(iteration))
 	pul.wait()
@@ -412,15 +441,14 @@ def main():  # SELF TEST PROGRAM
 	adc.close()
 	pul.close()
 
-
 	# print('adcos len=',len(adcos))
 	#	print(adcos)
 	# print(len(adcos))
 	a1 = plt.subplot()
-	a1.set_ylim([-2,2])	# voltage is -2.0..2.0V
+	a1.set_ylim([-2, 2])  # voltage is -2.0..2.0V
 	a1.plot(adcos)
 	a2 = plt.subplot()
-	a2.set_ylim([-2,2])
+	a2.set_ylim([-2, 2])
 	a2.plot(adsin)
 	plt.show()
 
@@ -430,5 +458,11 @@ def main():  # SELF TEST PROGRAM
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 if __name__ == "__main__":
-	main()
+	a  = ADC_Flags()
+	a.asbyte = 0x0c
+	print(a.b.BUSY)
+	print(a.b.END)
+
+
+	#main()
 	pass
