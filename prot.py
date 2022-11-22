@@ -240,6 +240,17 @@ class prot_ad(tcp_client):
 		return vcos, vsin
 
 	def readadf(self, address, samples, iteration):
+		"""
+		ＡＤのメモリーを電圧に変換して読み出す。
+		:param address: 読み出しアドレス
+		:type address: 整数
+		:param samples: 読み出しサンプル数
+		:type samples: 整数
+		:param iteration: 積算されたであろう回数
+		:type iteration: 整数
+		:return: コサイン電圧リスト、サイン電圧リスト
+		:rtype: 数値のリスト、数値のリスト
+		"""
 		fcos = []
 		fsin = []
 		dcos, dsin = self.readad_raw(address, samples)
@@ -375,6 +386,7 @@ def test3(d):
 def main():  # SELF TEST PROGRAM
 	print('start self test program')
 
+	# パルサーを開く
 	pul = prot_pulser()
 	pul.init(IP)
 	s = pul.open()
@@ -383,6 +395,7 @@ def main():  # SELF TEST PROGRAM
 		return
 	print('CONNECT [{}]'.format(s))
 
+	# ADを開く
 	adc = prot_ad()
 	adc.init(IP)
 	s = adc.open()
@@ -391,6 +404,7 @@ def main():  # SELF TEST PROGRAM
 		return
 	print('CONNECT [{}]'.format(s))
 
+	# RF制御部分を開く
 	rfl = prot_rf()
 	rfl.init(IP)
 	s = rfl.open()
@@ -399,51 +413,36 @@ def main():  # SELF TEST PROGRAM
 		return
 	print('CONNECT [{}]'.format(s))
 
-	# test1(pul)
-	# test2(rfl)
-	# test3(rfl)
-
+	# パルス作成　1回のみ
 	iteration = 1
 	wavesize = 4096
 	pul.send('stop')
 	pul.wait()
 
 	adc.send('startad {}, {}, 1, 0'.format(wavesize, iteration))  # setup ADC
-	pul.send('setmode 0')  # 0:standard pulse mode 1:extended pulse mode
+	pul.send('setmode 0')      # 0:standard pulse mode 1:extended pulse mode
 	pul.send('loopmode')
-	pul.send('usecomb 0')  # comb pulse not use
-	pul.send('cpn 1')  # comb pulse not use
-	pul.send('adtrg 1')  # 0:Spin echo position  1:Freedecay position
-	pul.send('double')  # double pulse mode
+	pul.send('usecomb 0')      # comb pulse not use
+	pul.send('cpn 1')          # comb pulse not use
+	pul.send('adtrg 1')        # 0:Spin echo position  1:Freedecay position
+	pul.send('double')         # double pulse mode
 	pul.send('adoff -100e-6')  # AD trigger offset
-	pul.send('fpw 20e-6')  # 1st pulse width
+	pul.send('fpw 20e-6')      # 1st pulse width
 	pul.send('t2  50e-6')
-	pul.send('spw 40e-6')  # 2nd pulse width
-	pul.send('fpq 0')  # 1st pulse +X QPSK1ST
-	pul.send('spq 1')  # 2nd pulse +Y QPSK2ND
+	pul.send('spw 40e-6')      # 2nd pulse width
+	pul.send('fpq 0')          # 1st pulse +X QPSK1ST
+	pul.send('spq 1')          # 2nd pulse +Y QPSK2ND
 	pul.send('blank 1')
-	pul.send('start {}'.format(iteration))
-	pul.wait()
+	pul.send('start {}'.format(iteration)) 	# パルス出力開始
+	pul.wait()                              # パルス出力の待ち合わせ
 
-	allpulmem = pul.readmemoryb(0, 3000)
-
-	a = pul.readmemoryb(2, 3)
-	pul.dump(0, 10)
-	print('----------')
-	for b in a:
-		print('{:08X}:{:08X}'.format(b.t, b.d))
-
-	adcos, adsin = adc.readadf(0, wavesize, iteration)
-	# a = adc.query('readmemoryb {},4'.format(wavesize))
-	# print(a)
+	adcos, adsin = adc.readadf(0, wavesize, iteration) # ＡＤは取り込みが終わっているはずなのでメモリー読みだし
 
 	rfl.close()
 	adc.close()
 	pul.close()
 
-	# print('adcos len=',len(adcos))
-	#	print(adcos)
-	# print(len(adcos))
+	# MATPLOTLIBを用いてadcos,adsinデータの表示
 	a1 = plt.subplot()
 	a1.set_ylim([-2, 2])  # voltage is -2.0..2.0V
 	a1.plot(adcos)
@@ -458,11 +457,11 @@ def main():  # SELF TEST PROGRAM
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 if __name__ == "__main__":
-	a  = ADC_Flags()
-	a.asbyte = 0x0c
-	print(a.b.BUSY)
-	print(a.b.END)
+	# a  = ADC_Flags()
+	# a.asbyte = 0x0c
+	# print(a.b.BUSY)
+	# print(a.b.END)
 
 
-	#main()
+	main()
 	pass
