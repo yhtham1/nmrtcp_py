@@ -17,7 +17,8 @@ import resizetimer
 
 
 
-IP = 'localhost'
+# PROT_IP = '192.168.0.211'
+PROT_IP = 'localhost'
 
 bit_name = [  		# bit
 	'TX1',  		# 0
@@ -184,14 +185,14 @@ class MainWindow(QMainWindow):
 		# check1
 		self.setCentralWidget(qcore)
 
-		self.adc = prot.prot_ad()
-		self.adc.init()
-		self.adc.open()
+		# self.adc = prot.prot_ad()
+		# self.adc.init()
+		# self.adc.open()
 		self.pul = prot.prot_pulser()
-		s = self.pul.init(IP)
+		s = self.pul.init(PROT_IP)
 		self.pul.open()
 		self.pulpara = self.query_all_pulser()
-		self.mem = self.pul.readmemoryb(0, 1000)
+		# self.mem = self.pul.readmemoryb(0, 1000)
 		self.InitUI()
 		self.ct = 0
 		# for m1 in self.mem:
@@ -223,21 +224,38 @@ class MainWindow(QMainWindow):
 	def query_all_pulser(self): # HW -> python
 		p = self.pul
 		p1 = PUL_P()
-		p1.usecomb  = True if int(p.query('usecomb?')) == 1 else False
-		p1.double   = True if int(p.query('double?')) == 1 else False
-		p1.cpw      = et.str2time(p.query('cpw?'))
-		p1.cpi      = et.str2time(p.query('cpi?'))
-		p1.cpn      = int(p.query('cpn?'))
-		p1.cpq      = int(p.query('cpq?'))
-		p1.tj       = et.str2time(p.query('tj?'))
-		p1.fpw      = et.str2time(p.query('fpw?'))
-		p1.fpq      = int(p.query('fpq?'))
-		p1.t2       = et.str2time(p.query('t2?'))
-		p1.spw      = et.str2time(p.query('spw?'))
-		p1.spq      = int(p.query('spq?'))
-		p1.blank    = et.str2time(p.query('blank?'))
-		p1.adoff    = et.str2time(p.query('adoff?'))
-		p1.waitmode = True if int(p.query('waitmode?')) == 1 else False
+		p1.usecomb  = 0 # True if int(p.query('usecomb?')) == 1 else False
+		p1.double   = 0 # True if int(p.query('double?')) == 1 else False
+		p1.cpw      = 0 # et.str2time(p.query('cpw?'))
+		p1.cpi      = 0 # et.str2time(p.query('cpi?'))
+		p1.cpn      = 0 # int(p.query('cpn?'))
+		p1.cpq      = 0 # int(p.query('cpq?'))
+		p1.tj       = 0 # et.str2time(p.query('tj?'))
+		p1.fpw      = 0 # et.str2time(p.query('fpw?'))
+		p1.fpq      = 0 # int(p.query('fpq?'))
+		p1.t2       = 0 # et.str2time(p.query('t2?'))
+		p1.spw      = 0 # et.str2time(p.query('spw?'))
+		p1.spq      = 0 # int(p.query('spq?'))
+		p1.blank    = 0 # et.str2time(p.query('blank?'))
+		p1.adoff    = 0 # et.str2time(p.query('adoff?'))
+		p1.waitmode = 0 # True if int(p.query('waitmode?')) == 1 else False
+
+
+		# p1.usecomb  = True if int(p.query('usecomb?')) == 1 else False
+		# p1.double   = True if int(p.query('double?')) == 1 else False
+		# p1.cpw      = et.str2time(p.query('cpw?'))
+		# p1.cpi      = et.str2time(p.query('cpi?'))
+		# p1.cpn      = int(p.query('cpn?'))
+		# p1.cpq      = int(p.query('cpq?'))
+		# p1.tj       = et.str2time(p.query('tj?'))
+		# p1.fpw      = et.str2time(p.query('fpw?'))
+		# p1.fpq      = int(p.query('fpq?'))
+		# p1.t2       = et.str2time(p.query('t2?'))
+		# p1.spw      = et.str2time(p.query('spw?'))
+		# p1.spq      = int(p.query('spq?'))
+		# p1.blank    = et.str2time(p.query('blank?'))
+		# p1.adoff    = et.str2time(p.query('adoff?'))
+		# p1.waitmode = True if int(p.query('waitmode?')) == 1 else False
 		return p1
 
 	def setWidget(self,p):

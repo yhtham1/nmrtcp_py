@@ -74,7 +74,7 @@ class tcp_client():
 	def query(self, msg, rxlen=1024):
 		if None == self.my_socket:
 			print('error not open')
-		self.send(msg)
+		self.send(msg+'\r\n')
 		tans = self.recv_utf8(rxlen)
 		ans = tans.strip()
 		return ans
