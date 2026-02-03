@@ -6,7 +6,7 @@ import socket
 import etools as et
 import matplotlib.pyplot as plt
 
-IP = 'localhost'
+IP = '192.168.0.224'
 PULSER_PORT = 5025  # PULSER
 AD_PORT = 5026  # AD
 RF_PORT = 5027  # RF LOWLEVEL
@@ -98,11 +98,11 @@ class prot_pulser(tcp_client):
 			self.t = t1
 			self.d = d1
 
-	def __init__(self):
+	def __init__(self, ip='localhost'):
 		super().__init__()
-		self.MAX_PULMEM = 3000
+		self.MAX_PULMEM = 6000
 		self.internal_clock = 100e6  # 100MHz
-		self.ip = 'localghost'
+		self.ip = ip
 		self.port = PULSER_PORT
 		self.mem = []
 		for i in range(self.MAX_PULMEM):
@@ -130,16 +130,7 @@ class prot_pulser(tcp_client):
 		a = self.query('isrun?')
 		return a
 
-	def readmemoryb(self, st_add, num):
-		self.send('readmemoryb {},{}'.format(st_add, num))
-		ans = self.recv_utf8(16)
-		data_bytes = int(ans[7:7 + 8], base=16)
-		ans = self.recv_utf8_sized(data_bytes)
-		vals = int((data_bytes - 2) / 16)
-		for i in range(vals):
-			self.mem[st_add + i].t = int(ans[i * 16:i * 16 + 8], base=16)
-			self.mem[st_add + i].d = int(ans[i * 16 + 8:i * 16 + 16], base=16)
-		return self.mem[st_add: st_add + num]
+
 
 	def init(self, ip='localhost', port=PULSER_PORT):
 		self.ip = ip
@@ -172,175 +163,6 @@ class prot_pulser(tcp_client):
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-import ctypes
-from ctypes import c_uint8
-
-
-class ADC_Flags_bits(ctypes.LittleEndianStructure):
-	_fields_ = [
-		('SP', c_uint8, 1),
-		('BUSY', c_uint8, 1),
-		('END', c_uint8, 1),
-		('NC1', c_uint8, 1),
-		('COVF', c_uint8, 1),
-		('SOVF', c_uint8, 1),
-		('PLL', c_uint8, 1),
-	]
-
-
-class ADC_Flags(ctypes.Union):
-	_fields_ = [("b", ADC_Flags_bits),
-				("asbyte", c_uint8)]
-
-
-class prot_ad(tcp_client):
-	"""
-	使用できる関数一覧
-	readadf()
-	"""
-	bitwidth = 16
-
-	def __init__(self):
-		super().__init__()
-		self.ip = 'localhost'
-		self.port = AD_PORT
-		self.flag = ADC_Flags()
-
-	# -------------------------------------------------------------------
-	def status(self):
-		ans = int(self.query('readstatus'))
-		self.flag.asbyte = 0xff & ans
-		return ans
-
-	def getsamplefreq(self):
-		ans = float(self.query('getsamplefreq'))
-		return ans
-
-	def readad_raw(self, address, samples):
-		self.send('readmemoryb {},{}'.format(address, samples))
-		ans = self.recv_utf8(16)
-		data_bytes = int(ans[7:7 + 8], base=16)
-		# print('samplesS:{}'.format(ans[7:7+8]))
-		# print('samplesI:{}'.format(data_bytes))
-		# samples = int('0x'+ ans[0])
-		# print('size:{}'.format(data_bytes))
-		ans = self.recv_utf8_sized(data_bytes)
-		vals = int((data_bytes - 2) / 16)
-		# print('vals:{}'.format(vals))
-		# print('--------------', type(ans))
-		# print('anslen:{}:{}'.format(len(ans),data_bytes))
-		vcos = []
-		vsin = []
-		for i in range(vals):
-			cosdat = int(ans[i * 16:i * 16 + 8], base=16)
-			sindat = int(ans[i * 16 + 8:i * 16 + 16], base=16)
-			# print(cosdat,sindat)
-			vcos.append(cosdat)
-			vsin.append(sindat)
-		return vcos, vsin
-
-	def readadf(self, address, samples, iteration):
-		"""
-		ＡＤのメモリーを電圧に変換して読み出す。
-		:param address: 読み出しアドレス
-		:type address: 整数
-		:param samples: 読み出しサンプル数
-		:type samples: 整数
-		:param iteration: 積算されたであろう回数
-		:type iteration: 整数
-		:return: コサイン電圧リスト、サイン電圧リスト
-		:rtype: 数値のリスト、数値のリスト
-		"""
-		fcos = []
-		fsin = []
-		dcos, dsin = self.readad_raw(address, samples)
-		if 16 == self.bitwidth:
-			# ----------------------------- bit 16
-			for i in dcos:
-				v = float(i) / float(iteration)
-				f = (v - 32768.0) / 13107.2  # 13107.2=(32768.0/2.5)	#±2.5にする。
-				fcos.append(f)
-			for i in dsin:
-				v = float(i) / float(iteration)
-				f = (v - 32768.0) / 13107.2  # 13107.2=(32768.0/2.5)	#±2.5にする。
-				fsin.append(f)
-		else:
-			# ----------------------------- bit 14
-			for i in dcos:
-				v = float(i) / float(iteration)
-				f = (v - 8192.0) / 3276.8  # 3276.8.2=(8192.0/2.5)	#±2.5にする。
-				fcos.append(f)
-			for i in dsin:
-				v = float(i) / float(iteration)
-				f = (v - 8192.0) / 3276.8  # 3276.8=(8192.0/2.5)	#±2.5にする。
-				fsin.append(f)
-		return fcos, fsin
-
-	def init(self, ip='localhost', port=AD_PORT):
-		self.ip = ip
-		self.port = port
-
-	def open(self):
-		ans = self.connect(self.ip, self.port)
-		if None == ans:
-			print('ERROR {}.init()'.format(self.__class__.__name__))
-			return None
-		ans_idn = self.query('*IDN?')
-		p = ans_idn.find(',BIT=')
-		if 0 <= p:
-			self.bitwidth = int(ans_idn[p + 5:p + 7])
-		else:
-			print('AD BIT ERROR {}.init()'.format(self.__class__.__name__))
-		return ans_idn
-
-
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-class prot_rf(tcp_client):
-	"""
-	使用できる関数一覧
-	import prot
-	rfl = prot.prot_rf()
-	rfl.init(ip,port)	connect parameters 接続情報
-	rfl.open()          接続に成功した場合　*IDNの文字列を返す
-	rfl.send('rfsww0')	コマンド例
-	rfl.query('*idn?')	コマンド例
-	"""
-
-	def __init__(self):
-		super().__init__()
-		self.ip = 'localhost'
-		self.port = RF_PORT
-
-	# -------------------------------------------------------------------
-	def send(self, msg):
-		super().send(msg)
-		a = self.recv_utf8(100)
-		return
-
-	def query(self, msg):
-		super().send(msg)
-		a = self.recv_utf8(100)
-		while 2 == len(a):
-			a = self.recv_utf8(100)
-		ans = a.strip()
-		return ans
-
-	def init(self, ip='localhost', port=RF_PORT):
-		self.ip = ip
-		self.port = port
-
-	# print('{}-IP:{} PORT{}'.format(self.__class__.__name__, ip, port ))
-
-	def open(self):
-		ans = self.connect(self.ip, self.port)
-		if None == ans:
-			print('ERROR {}.init()'.format(self.__class__.__name__))
-			return None
-		ans_idn = self.query('*IDN?')
-		return ans_idn
-
 
 def test1(pul):
 	print('Start------------ {} '.format(pul.query('*idn?')))
@@ -360,32 +182,12 @@ def test1(pul):
 		ct += 1
 
 
-def test2(d):
-	ct = 0
-	for i in range(100):
-		d.send('RFSWW0')
-		d.send('RFSWW1')
-		time.sleep(0.1)
-	return
-
-
-def test3(d):
-	ct = 0
-	a = 0
-	for i in range(90):
-		t1 = time.perf_counter()
-		ans = d.query('GAINW{}'.format(a))
-		ct += 1
-		t2 = time.perf_counter()
-		print('ct:{} Time:{:f} ans:{}'.format(ct, t2 - t1, ans))
-
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 def main():  # SELF TEST PROGRAM
 	print('start self test program')
-
 	# パルサーを開く
 	pul = prot_pulser()
 	pul.init(IP)
@@ -394,32 +196,31 @@ def main():  # SELF TEST PROGRAM
 		print('prot.py:error socket')
 		return
 	print('CONNECT [{}]'.format(s))
+	pul.send('memclr')
+	for i in range(1000):
+		a = pul.query(('peek {}'.format(i+50)))
+		if 0 > a.find(':FEFF'):
+			print(a)
+	return
 
-	# ADを開く
-	adc = prot_ad()
-	adc.init(IP)
-	s = adc.open()
-	if None == s:
-		print('prot.py:error socket')
-		return
-	print('CONNECT [{}]'.format(s))
 
-	# RF制御部分を開く
-	rfl = prot_rf()
-	rfl.init(IP)
-	s = rfl.open()
-	if None == s:
-		print('prot.py:error socket')
-		return
-	print('CONNECT [{}]'.format(s))
+
+
+
+
+
+
+
+
+
+
 
 	# パルス作成　1回のみ
-	iteration = 1
+	iteration = 100
 	wavesize = 4096
 	pul.send('stop')
 	pul.wait()
 
-	adc.send('startad {}, {}, 1, 0'.format(wavesize, iteration))  # setup ADC
 	pul.send('setmode 0')      # 0:standard pulse mode 1:extended pulse mode
 	pul.send('loopmode')
 	pul.send('usecomb 0')      # comb pulse not use
@@ -427,30 +228,16 @@ def main():  # SELF TEST PROGRAM
 	pul.send('adtrg 1')        # 0:Spin echo position  1:Freedecay position
 	pul.send('double')         # double pulse mode
 	pul.send('adoff -100e-6')  # AD trigger offset
-	pul.send('fpw 20e-6')      # 1st pulse width
+	pul.send('fpw 200e-6')      # 1st pulse width
 	pul.send('t2  50e-6')
 	pul.send('spw 40e-6')      # 2nd pulse width
 	pul.send('fpq 0')          # 1st pulse +X QPSK1ST
 	pul.send('spq 1')          # 2nd pulse +Y QPSK2ND
-	pul.send('blank 1')
+	pul.send('blank 0.1')
 	pul.send('start {}'.format(iteration)) 	# パルス出力開始
 	pul.wait()                              # パルス出力の待ち合わせ
-
-	adcos, adsin = adc.readadf(0, wavesize, iteration) # ＡＤは取り込みが終わっているはずなのでメモリー読みだし
-
-	rfl.close()
-	adc.close()
+	print('wait ok')
 	pul.close()
-
-	# MATPLOTLIBを用いてadcos,adsinデータの表示
-	a1 = plt.subplot()
-	a1.set_ylim([-2, 2])  # voltage is -2.0..2.0V
-	a1.plot(adcos)
-	a2 = plt.subplot()
-	a2.set_ylim([-2, 2])
-	a2.plot(adsin)
-	plt.show()
-
 	return
 
 
